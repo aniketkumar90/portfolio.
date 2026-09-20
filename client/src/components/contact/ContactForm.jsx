@@ -16,12 +16,32 @@ export function ContactForm() {
     setSubmitting(true);
     setStatus(null);
 
+    const whatsappNumber = "919525971964";
+    const text = `*New Portfolio Contact*\n\n*Name:* ${formData.name}\n*Email:* ${formData.email}\n*Message:* ${formData.message}`;
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(text)}`;
+
     try {
-      const res = await contactService.submitMessage(formData);
-      setStatus({ type: "success", message: res.message || "Message dispatched successfully!" });
+      // Send to backend database in background
+      contactService.submitMessage(formData).catch((err) => {
+        console.warn("Backend submission note:", err);
+      });
+
+      setStatus({
+        type: "success",
+        message: "Redirecting to WhatsApp (+91 9525971964)...",
+        whatsappUrl,
+      });
+
+      // Try opening in new tab, or redirect
+      const newWin = window.open(whatsappUrl, "_blank");
+      if (!newWin || newWin.closed || typeof newWin.closed === "undefined") {
+        window.location.href = whatsappUrl;
+      }
+
       setFormData({ name: "", email: "", message: "" });
     } catch (err) {
-      setStatus({ type: "error", message: err.message || "Failed to send message." });
+      // Fallback redirect to WhatsApp even if backend is offline
+      window.location.href = whatsappUrl;
     } finally {
       setSubmitting(false);
     }
@@ -42,17 +62,33 @@ export function ContactForm() {
       viewport={{ once: true, amount: 0.25 }}
       transition={{ duration: 0.55 }}
     >
-      <p className="text-xs uppercase tracking-[0.28em] text-cyan-200 font-mono">Message Dispatch</p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs uppercase tracking-[0.28em] text-cyan-200 font-mono">Message Dispatch</p>
+        <span className="text-[11px] font-mono text-emerald-300 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          WhatsApp Direct
+        </span>
+      </div>
 
       {status && (
         <div
           className={`p-3 rounded-xl text-xs font-mono border ${
             status.type === "success"
-              ? "bg-cyan-950/60 border-cyan-400 text-cyan-200"
+              ? "bg-emerald-950/70 border-emerald-400/80 text-emerald-200"
               : "bg-red-950/60 border-red-400 text-red-200"
           }`}
         >
-          {status.message}
+          <p>{status.message}</p>
+          {status.whatsappUrl && (
+            <a
+              href={status.whatsappUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 inline-block text-xs text-emerald-300 underline font-sans font-semibold hover:text-emerald-100"
+            >
+              Click here to open WhatsApp directly →
+            </a>
+          )}
         </div>
       )}
 
@@ -84,9 +120,9 @@ export function ContactForm() {
       <button
         type="submit"
         disabled={submitting}
-        className="neo-btn w-fit disabled:opacity-50 cursor-pointer"
+        className="neo-btn w-fit disabled:opacity-50 cursor-pointer flex items-center gap-2"
       >
-        {submitting ? "Sending Transmission..." : "Send Message"}
+        {submitting ? "Opening WhatsApp..." : "Send via WhatsApp"}
       </button>
     </motion.form>
   );

@@ -37,7 +37,15 @@ export function Contact() {
               <span className="font-semibold text-white">Email:</span> {profile.email}
             </p>
             <p>
-              <span className="font-semibold text-white">Phone:</span> {profile.phone}
+              <span className="font-semibold text-white">WhatsApp / Phone:</span>{" "}
+              <a
+                className="text-emerald-300 hover:underline font-mono"
+                href="https://wa.me/919525971964"
+                target="_blank"
+                rel="noreferrer"
+              >
+                {profile.phone}
+              </a>
             </p>
             <p>
               <span className="font-semibold text-white">GitHub:</span>{" "}
