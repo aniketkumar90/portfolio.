@@ -2,9 +2,9 @@ import React, { useRef, useState } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
 import ProjectPreview from "./ProjectPreview";
 
-export function ProjectLaptop({ project, isParentHovered = false }) {
+export function ProjectLaptop({ project, isParentHovered = false, isMobile = false }) {
   const [localHover, setLocalHover] = useState(false);
-  const isHovered = localHover || isParentHovered;
+  const isHovered = isMobile || localHover || isParentHovered;
   const containerRef = useRef(null);
 
   // 3D Parallax Tilt based on mouse movement
@@ -352,6 +352,7 @@ export function ProjectLaptop({ project, isParentHovered = false }) {
           project={project}
           isCardHovered={isHovered}
           isLaptopHovered={localHover}
+          isMobile={isMobile}
         />
       </motion.div>
     </div>

@@ -56,7 +56,13 @@ export function ProjectCarousel() {
       >
         {/* ================= 1. MAIN LARGE PROJECT CARD (~76–78% WIDTH) ================= */}
         <AnimatePresence mode="wait" custom={direction}>
-          <ProjectCard key={active.title} project={active} direction={direction} />
+          <ProjectCard
+            key={active.title}
+            project={active}
+            direction={direction}
+            onNext={handleNext}
+            onPrev={handlePrev}
+          />
         </AnimatePresence>
 
         {/* ================= 2. NEXT PROJECT (SMALL CARD ~22–24% WIDTH) ================= */}
