@@ -1,6 +1,7 @@
 import React, { useState } from "react";
+import projectService from "../../services/projectService";
 
-export function AddProject({ onSave, onCancel }) {
+export function AddProject({ isOpen, onClose, onSuccess, onSave, onCancel }) {
   const [form, setForm] = useState({
     title: "",
     summary: "",
@@ -9,24 +10,57 @@ export function AddProject({ onSave, onCancel }) {
     image: "",
     order: 1,
   });
+  const [saving, setSaving] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // Support both modal (isOpen) and inline (onCancel/onSave) usage
+  if (isOpen !== undefined && !isOpen) return null;
+
+  const handleClose = () => {
+    if (onClose) onClose();
+    if (onCancel) onCancel();
+  };
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setSaving(true);
+    setErrorMsg("");
+
     const payload = {
       ...form,
       stack: form.stack.split(",").map((s) => s.trim()).filter(Boolean),
       order: Number(form.order) || 1,
       featured: true,
     };
-    onSave(payload);
+
+    try {
+      if (onSave) {
+        await onSave(payload);
+      } else {
+        await projectService.createProject(payload);
+      }
+      if (onSuccess) onSuccess();
+      handleClose();
+    } catch (err) {
+      console.error("Failed to add project:", err);
+      setErrorMsg(err.response?.data?.message || err.message || "Failed to create project");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  return (
+  const formContent = (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {errorMsg && (
+        <div className="p-3 text-xs bg-rose-500/20 border border-rose-500/40 text-rose-300 rounded-lg">
+          {errorMsg}
+        </div>
+      )}
+
       <div>
         <label className="block text-xs font-mono text-cyan-300 mb-1">Project Title *</label>
         <input
@@ -34,7 +68,7 @@ export function AddProject({ onSave, onCancel }) {
           value={form.title}
           onChange={handleChange}
           required
-          className="field w-full text-sm"
+          className="field w-full text-sm bg-slate-900 border border-white/10 rounded-lg p-2.5 text-white focus:border-cyan-400 outline-none"
           placeholder="e.g. NextGen FinTech"
         />
       </div>
@@ -45,7 +79,7 @@ export function AddProject({ onSave, onCancel }) {
           name="link"
           value={form.link}
           onChange={handleChange}
-          className="field w-full text-sm"
+          className="field w-full text-sm bg-slate-900 border border-white/10 rounded-lg p-2.5 text-white focus:border-cyan-400 outline-none"
           placeholder="https://example.com"
         />
       </div>
@@ -56,7 +90,7 @@ export function AddProject({ onSave, onCancel }) {
           name="image"
           value={form.image}
           onChange={handleChange}
-          className="field w-full text-sm"
+          className="field w-full text-sm bg-slate-900 border border-white/10 rounded-lg p-2.5 text-white focus:border-cyan-400 outline-none"
           placeholder="/projects/sample.png"
         />
       </div>
@@ -67,7 +101,7 @@ export function AddProject({ onSave, onCancel }) {
           name="stack"
           value={form.stack}
           onChange={handleChange}
-          className="field w-full text-sm"
+          className="field w-full text-sm bg-slate-900 border border-white/10 rounded-lg p-2.5 text-white focus:border-cyan-400 outline-none"
           placeholder="React.js, Tailwind CSS, Node.js"
         />
       </div>
@@ -79,24 +113,53 @@ export function AddProject({ onSave, onCancel }) {
           type="number"
           value={form.order}
           onChange={handleChange}
-          className="field w-full text-sm"
+          className="field w-full text-sm bg-slate-900 border border-white/10 rounded-lg p-2.5 text-white focus:border-cyan-400 outline-none"
         />
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-white/10">
         <button
           type="button"
-          onClick={onCancel}
+          onClick={handleClose}
+          disabled={saving}
           className="px-4 py-2 rounded-xl text-xs font-mono text-slate-300 hover:bg-white/10 transition cursor-pointer"
         >
           Cancel
         </button>
-        <button type="submit" className="neo-btn text-xs py-2 px-5 cursor-pointer">
-          Save Project
+        <button
+          type="submit"
+          disabled={saving}
+          className="neo-btn text-xs py-2 px-5 cursor-pointer bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-bold"
+        >
+          {saving ? "Saving to MongoDB..." : "Save Project"}
         </button>
       </div>
     </form>
   );
+
+  if (isOpen !== undefined) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div className="w-full max-w-lg p-6 bg-slate-900 border border-cyan-500/30 rounded-2xl shadow-2xl space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+            <h3 className="text-lg font-bold text-white font-mono flex items-center gap-2">
+              <span className="h-2.5 w-2.5 rounded-full bg-cyan-400" />
+              Add New Project (MongoDB)
+            </h3>
+            <button
+              onClick={handleClose}
+              className="text-slate-400 hover:text-white text-lg font-mono p-1"
+            >
+              ✕
+            </button>
+          </div>
+          {formContent}
+        </div>
+      </div>
+    );
+  }
+
+  return formContent;
 }
 
 export default AddProject;

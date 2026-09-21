@@ -1,6 +1,6 @@
 import Project from "../models/Project.js";
 
-// Seed baseline projects: 3 clean distinct projects (no duplicates)
+// Baseline initial projects
 export const seedProjects = [
   {
     title: "NEW SHIV JEWELLERS",
@@ -42,46 +42,9 @@ export const getAllProjectsService = async () => {
     let projects = await Project.find().sort({ order: 1, createdAt: -1 });
     if (!projects || projects.length === 0) {
       await Project.insertMany(seedProjects).catch(() => {});
-      return seedProjects;
+      projects = await Project.find().sort({ order: 1, createdAt: -1 });
     }
-
-    // Deduplicate and ensure exactly the 3 distinct projects
-    const result = [];
-
-    // 1. Jewellers
-    const jewel = projects.find((p) => /jewel|shiv/i.test(p.title)) || seedProjects[0];
-    result.push({
-      ...jewel.toObject ? jewel.toObject() : jewel,
-      title: "NEW SHIV JEWELLERS",
-      image: "/projects/new-shiv-jewellers.png",
-      link: "https://jewllary-ten.vercel.app/",
-      websiteUrl: "https://jewllary-ten.vercel.app/",
-      order: 1,
-    });
-
-    // 2. Real Estate Platform (remove dynamic duplicate)
-    const realEstate = projects.find((p) => /real.*estate/i.test(p.title)) || seedProjects[1];
-    result.push({
-      ...realEstate.toObject ? realEstate.toObject() : realEstate,
-      title: "Real Estate Platform",
-      image: "/projects/real-estate.png",
-      link: "https://dynamicrealestateweb.vercel.app/",
-      websiteUrl: "https://dynamicrealestateweb.vercel.app/",
-      order: 2,
-    });
-
-    // 3. E-Commerce Platform (remove relaymart duplicate)
-    const ecommerce = projects.find((p) => /e-?commerce|relay/i.test(p.title)) || seedProjects[2];
-    result.push({
-      ...ecommerce.toObject ? ecommerce.toObject() : ecommerce,
-      title: "E-Commerce Platform",
-      image: "/projects/relaymart.png",
-      link: "https://relaymart.netlify.app/",
-      websiteUrl: "https://relaymart.netlify.app/",
-      order: 3,
-    });
-
-    return result;
+    return projects;
   } catch (error) {
     console.warn("[ProjectService] Database fetch error, returning seed projects:", error.message);
     return seedProjects;

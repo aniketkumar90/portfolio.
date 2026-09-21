@@ -2,52 +2,14 @@ import api from "./api";
 import { initialProjects } from "../data/profile";
 
 export const projectService = {
-  // Fetch all projects (with seamless offline fallback and deduplication)
+  // Fetch all projects from live MongoDB backend with seamless offline fallback
   async getProjects() {
     try {
       const res = await api.get("/projects");
-      const list = res.data?.data && res.data.data.length > 0 ? res.data.data : initialProjects;
-
-      // Deduplicate into exactly the 3 clean projects:
-      // 1. NEW SHIV JEWELLERS
-      // 2. Real Estate Platform (removing Dynamic duplicate)
-      // 3. E-Commerce Platform (removing RelayMart duplicate)
-      const result = [];
-
-      // 1. Jewellers
-      const jewel = list.find((p) => /jewel|shiv/i.test(p.title)) || initialProjects[0];
-      result.push({
-        ...jewel,
-        title: "NEW SHIV JEWELLERS",
-        image: "/projects/new-shiv-jewellers.png",
-        link: "https://jewllary-ten.vercel.app/",
-        websiteUrl: "https://jewllary-ten.vercel.app/",
-        order: 1,
-      });
-
-      // 2. Real Estate Platform
-      const realEstate = list.find((p) => /real.*estate/i.test(p.title)) || initialProjects[1];
-      result.push({
-        ...realEstate,
-        title: "Real Estate Platform",
-        image: "/projects/real-estate.png",
-        link: "https://dynamicrealestateweb.vercel.app/",
-        websiteUrl: "https://dynamicrealestateweb.vercel.app/",
-        order: 2,
-      });
-
-      // 3. E-Commerce Platform
-      const ecommerce = list.find((p) => /e-?commerce|relay/i.test(p.title)) || initialProjects[2];
-      result.push({
-        ...ecommerce,
-        title: "E-Commerce Platform",
-        image: "/projects/relaymart.png",
-        link: "https://relaymart.netlify.app/",
-        websiteUrl: "https://relaymart.netlify.app/",
-        order: 3,
-      });
-
-      return result;
+      if (res.data?.data && Array.isArray(res.data.data) && res.data.data.length > 0) {
+        return res.data.data;
+      }
+      return initialProjects;
     } catch (err) {
       console.warn("[ProjectService] API unreachable, using local fallback seed:", err.message);
       return initialProjects;
@@ -64,7 +26,7 @@ export const projectService = {
     }
   },
 
-  // Admin: Create project
+  // Admin: Create project in MongoDB
   async createProject(formData) {
     const res = await api.post("/projects", formData, {
       headers: {
@@ -74,7 +36,7 @@ export const projectService = {
     return res.data;
   },
 
-  // Admin: Update project
+  // Admin: Update project in MongoDB
   async updateProject(id, formData) {
     const res = await api.put(`/projects/${id}`, formData, {
       headers: {
@@ -84,7 +46,7 @@ export const projectService = {
     return res.data;
   },
 
-  // Admin: Delete project
+  // Admin: Delete project from MongoDB
   async deleteProject(id) {
     const res = await api.delete(`/projects/${id}`);
     return res.data;

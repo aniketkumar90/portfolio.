@@ -12,20 +12,27 @@ const generateToken = (id) => {
 // @access  Public
 export const login = async (req, res, next) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, email } = req.body;
+    const identifier = (username || email || "").trim();
 
-    // Check fallback dev admin if database has no users
-    if (username === "admin" && password === "admin123") {
-      return res.json({
-        success: true,
-        user: { username: "admin", role: "admin" },
-        token: generateToken("admin_seed_id"),
+    if (!identifier || !password) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide both username/email and password",
       });
     }
 
-    const user = await User.findOne({ username });
+    // Check MongoDB user by username OR email (case-insensitively)
+    const user = await User.findOne({
+      $or: [
+        { username: identifier },
+        { email: identifier.toLowerCase() },
+        { username: identifier.toLowerCase() },
+      ],
+    });
+
     if (user && (await user.matchPassword(password))) {
-      res.json({
+      return res.json({
         success: true,
         user: {
           _id: user._id,
@@ -35,9 +42,30 @@ export const login = async (req, res, next) => {
         },
         token: generateToken(user._id),
       });
-    } else {
-      res.status(401).json({ success: false, message: "Invalid credentials" });
     }
+
+    // Fallback dev admin credentials
+    const idLower = identifier.toLowerCase();
+    const isPrimaryAdmin =
+      (idLower === "aniket9097@gmail.com" || idLower === "aniket9097" || idLower === "admin") &&
+      password === "admin@9097";
+
+    const isLegacyAdmin = idLower === "admin" && password === "admin123";
+
+    if (isPrimaryAdmin || isLegacyAdmin) {
+      return res.json({
+        success: true,
+        user: {
+          _id: "admin_seed_id",
+          username: isPrimaryAdmin ? "aniket9097" : "admin",
+          email: isPrimaryAdmin ? "aniket9097@gmail.com" : "admin@portfolio.local",
+          role: "admin",
+        },
+        token: generateToken("admin_seed_id"),
+      });
+    }
+
+    res.status(401).json({ success: false, message: "Invalid credentials" });
   } catch (error) {
     next(error);
   }

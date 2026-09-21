@@ -22,11 +22,29 @@ export const useProjects = () => {
     }
   }, []);
 
+  const removeProject = async (id) => {
+    try {
+      await projectService.deleteProject(id);
+      await fetchProjects();
+      return true;
+    } catch (err) {
+      console.error("[useProjects] Delete failed:", err);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
 
-  return { projects, loading, error, refresh: fetchProjects };
+  return {
+    projects,
+    loading,
+    error,
+    refresh: fetchProjects,
+    refreshProjects: fetchProjects,
+    removeProject,
+  };
 };
 
 export default useProjects;
